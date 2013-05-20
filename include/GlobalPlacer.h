@@ -9,6 +9,11 @@ public:
     GlobalPlacer(Placement &placement);
 	void place();
 
+	double getNetWA(Net& n );
+	void testNetWA();
+
+	//double sigMoid(Module& m);
+
 private:
     Placement& _placement;
 	

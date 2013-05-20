@@ -6,6 +6,7 @@
 #include <math.h>
 #include <sys/resource.h>
 
+#define E 2.71828
 using namespace std;
 
 /////////////////////////////////////////////////
@@ -98,4 +99,11 @@ inline double seconds()
     //return double(clock())/CLOCKS_PER_SEC;
 #endif
 }
+
+
+inline double sigMoid(double l,double x,double u){
+	double alpha=1; 
+	return ( 1/(1+pow(E,-1*alpha*(x-l)) ) )*( 1/(1+pow(E,-1*alpha*(u-x)) ) );
+}
+
 #endif // UTIL_H
