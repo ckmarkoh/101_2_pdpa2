@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
     if(param.bRunGlobal)
     {
 
-		
         cout<<endl<<"////// Global Placement ///////"<<endl;
 
 		
