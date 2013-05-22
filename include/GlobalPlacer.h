@@ -15,8 +15,26 @@ public:
 	Module* getModule(unsigned i){
 		return _modules_vec[i];
 	}
-
+	Module* removeModule(Module* m){
+		if(m==0){
+			return 0;
+		}
+		//i = (i < _modules_vec.size()) ? i : _modules_vec.size();
+		vector<Module* >::iterator it =_modules_vec.begin();
+		while(it!=_modules_vec.end()){
+			if((*it)==m){
+				_modules_vec.erase(it);
+			}
+			else{
+				it++;
+			}
+		}
+		return (*it);
+	}
 	Module* removeModule(unsigned i){
+		if(_modules_vec.size()==0){
+			return 0;
+		}
 		i = (i < _modules_vec.size()) ? i : _modules_vec.size();
 		vector<Module* >::iterator it =_modules_vec.begin();
 		for(unsigned j =0 ;j<i;j++){
@@ -26,9 +44,10 @@ public:
 		return (*it);
 	}
 	void addModule(Module *m){
-		m->setCenterPosition(centerX(),centerY());	
-		_modules_vec.push_back(m);
-	
+		if(m!=0){
+			m->setCenterPosition(centerX(),centerY());	
+			_modules_vec.push_back(m);
+		}
 	}
 	double capacity(){
 		double cap=area();
@@ -84,13 +103,22 @@ public:
 		}
 	}
 	double getCost();
+	double getNetCost(Module* m1, Module* m2=0);
+
+	void simu_anneal();
 	bool simu_anneal_sub(double r,double t,double frozen,double n);
-	void random_neighbor();
+	double random_neighbor();
 	void restore_backup();
 
 	void store_backup();
 	void confirm_backup();
 private:
+	enum Move_state{
+			MOVE_M1=0,
+			MOVE_M2,
+			MOVE_EXCHANGE
+		};
+	Move_state move_state;
 
 	RandomNumGen _rnGen;
     Placement& _placement;
@@ -100,9 +128,13 @@ private:
 	unsigned _bin_numx;
 	unsigned _bin_numy;
 	vector<Module*> _backup_module;
-
-//	Bin*	backup_bin_f_1;
-//	Bin*	backup_bin_f_2;	
+	double _initial_cost;
+//	unsigned backup_id1;
+//	unsigned backup_id2;
+	Bin*	backup_bin_1;
+	Bin*	backup_bin_2;	
+	Module* backup_m_1;
+	Module* backup_m_2;
 //	Bin*	backup_bin_t_1;	
 //	Bin*	backup_bin_t_2;	
 };

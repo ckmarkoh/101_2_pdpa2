@@ -9,10 +9,15 @@
 #include <math.h>
 #include<iomanip>
 
-#define R 0.9
+
+#define R 0.8
 #define T 1000
-#define FROZEN 0.001
-#define N 500
+#define FROZEN 100
+
+//#define R 0.9
+//#define T 1000
+//#define FROZEN 0.001
+#define N 200
 
 using namespace std;
 double Bin::_width=0;
@@ -70,7 +75,8 @@ void GlobalPlacer::place()
 
 
 
-	simu_anneal_sub(R,T,FROZEN,N);
+	simu_anneal();
+//	simu_anneal_sub(R,T,FROZEN,N);
 //	testBin();
 }
 
@@ -92,7 +98,7 @@ void GlobalPlacer::initialize(){
 	reset_bin(unsigned( (_placement.boundryRight()-_placement.boundryLeft())/max_x) ,
 				unsigned((_placement.boundryTop()-_placement.boundryBottom())/max_y) );
 	cout<<"binx:"<<_bin_numx<<" biny:"<<_bin_numy <<endl;
-	cout<<"***********0*************"<<endl;
+//	cout<<"***********0*************"<<endl;
 	unsigned i=0;
 	while(i<_placement.numModules()){
 		unsigned j=0;
@@ -113,8 +119,8 @@ void GlobalPlacer::initialize(){
 		}
 		if(i>=_placement.numModules()){break;}
 	}
-	cout<<"***********1*************"<<endl;
-
+//	cout<<"***********1*************"<<endl;
+	_initial_cost=_placement.computeHpwl();
 }
 
 void GlobalPlacer::printAllBins(int zi){
@@ -133,11 +139,15 @@ void GlobalPlacer::printAllBins(int zi){
 }
 
 void GlobalPlacer::testBin(){
-	printAllBins(0);
+
+    cout << format("HPWL: %.10f", getCost() ) << endl;
+//	printAllBins(0);
+	for(size_t i=1;i<50;i++){
 	random_neighbor();
-	printAllBins(1);
+    cout << format("HPWL: %.10f", getCost() ) << endl;
 	restore_backup();
-	printAllBins(2);
+	}
+    cout << format("HPWL: %.10f", getCost() ) << endl;
 }
 
 
@@ -227,6 +237,51 @@ void GlobalPlacer::testNetWA(){
 //		cout<<sigMoid(10,i,90)<<endl;
 //	}
 }
+
+void GlobalPlacer::simu_anneal(){
+	float r=R;
+	float t=T;
+	float frozen=FROZEN;
+	float i=0;
+	float n=N;
+//	_myusage.reset();
+
+//	_treemgr.printCost();
+	while(i<21){
+		simu_anneal_sub(r,t,frozen,n);
+		t*=0.1;
+		frozen*=0.1;
+		n*=3;
+		float val =i++;
+		cout << format("HPWL: %.0f", _placement.computeHpwl() ) << endl;
+		cout<<"val: "<<val<<endl;
+		if(unsigned(i)%7==0){
+			r=R;
+			t=T;
+			frozen=FROZEN;
+			n=N;
+			RandomNumGen::change_seed();
+		}
+	}
+//	cout<<"overall times:"<<sa_total_time<<endl;
+/*	
+	float r=R1;
+	float t=T1;
+	float frozen=FROZEN1;
+	float i=0;
+	while(!simu_anneal_sub(r,t,frozen)){
+		t*=0.03;
+		frozen*=0.03;
+		r=sqrt(r);
+		float val =i++;
+		stringstream ss (stringstream::in | stringstream::out);
+		ss << val;
+		string test = ss.str();
+		string imgstate=_imgname+"_"+string(test)+".raw";
+		draw_block(imgstate.c_str());
+	}*/
+}
+
 bool GlobalPlacer::simu_anneal_sub(double r,double t,double frozen,double n){
 	unsigned times=0;
 	bool complete=false;
@@ -238,12 +293,12 @@ bool GlobalPlacer::simu_anneal_sub(double r,double t,double frozen,double n){
 		for(unsigned nz=0;nz<n;nz++){
 	//		cout<<times++<<endl;
 			times++;
-			double origin_cost=getCost();
+		//	double origin_cost=getCost();
 	//		cout<<"origin_cost:"<<origin_cost<<endl;
 	//		cout<<"before random_neighbor"<<endl;
-			random_neighbor();
+			double delta_cost=random_neighbor();
 	//		cout<<"after random_neighbor"<<endl;
-			double after_cost=getCost();
+		//	double after_cost=getCost();
 	//		cout<<"after_cost:"<<after_cost<<endl;
 		/*	if(after_cost==-1){
 				complete=true;
@@ -251,8 +306,10 @@ bool GlobalPlacer::simu_anneal_sub(double r,double t,double frozen,double n){
 				break;
 			}*/
 
-			double delta_cost=after_cost-origin_cost;
-	//		cout<<"delta_cost:"<<delta_cost<<endl;
+		//	double delta_cost=after_cost-origin_cost;
+		//	cout<<delta_cost_2-delta_cost<<endl;
+		//	cout<<"delta_cost:"<<delta_cost<<endl;
+		//	cout<<"delta_cost2:"<<delta_cost_2<<endl;
 			if(delta_cost>0){
 				if(_rnGen( pow(E,(delta_cost/tempture)) ) >= 1.0){
 			//		cout<<"  restore"<<endl;
@@ -288,12 +345,42 @@ bool GlobalPlacer::simu_anneal_sub(double r,double t,double frozen,double n){
 double GlobalPlacer::getCost(){
 		double total_cost=0;
 		for (unsigned i=0; i<_placement.numNets();i++){
-			total_cost+=(getNetEU(_placement.net(i))*0.0001);
+			total_cost+=getNetEU(_placement.net(i));
 		}
-		return _placement.computeHpwl()/100; 
+		return total_cost;//_placement.computeHpwl()/100; 
 	}
-void GlobalPlacer::random_neighbor(){
-	store_backup();
+double GlobalPlacer::getNetCost(Module* m1, Module* m2){
+		vector<Net*> net_vec;
+		if(m1!=0){
+			for(unsigned i=0;i<m1->numPins();i++){
+				vector<Net*>::iterator it;
+				Net* n1=&( _placement.net(m1->pin(i).netId()) );
+				it = find (net_vec.begin(), net_vec.end(), n1 );
+				if(it==net_vec.end()){
+					net_vec.push_back(n1);
+				}
+			}
+		}
+		if(m2!=0){
+			for(unsigned i=0;i<m2->numPins();i++){
+				vector<Net*>::iterator it;
+				Net* n2=&( _placement.net(m2->pin(i).netId()) );
+				it = find (net_vec.begin(), net_vec.end(), n2 );
+				if(it==net_vec.end()){
+					net_vec.push_back(n2);
+				}
+			}
+		}
+		double net_cost=0;
+	//	cout<<net_vec.size();
+		for(unsigned i=0;i<net_vec.size();i++){
+			
+			net_cost+=getNetEU(*net_vec[i]);
+		}
+		return net_cost/sqrt(_initial_cost);
+	}
+double GlobalPlacer::random_neighbor(){
+//	store_backup();
 	unsigned i_bin1=_rnGen(_bin_numx*_bin_numy);
 	unsigned i_bin2=_rnGen(_bin_numx*_bin_numy);
 
@@ -312,12 +399,14 @@ void GlobalPlacer::random_neighbor(){
 	double cap2=_bins_vec[idx2][idy2]->capacity();
 	unsigned sz1=_bins_vec[idx1][idy1]->size();
 	unsigned sz2=_bins_vec[idx2][idy2]->size();
-	enum Move_state{
+/*	enum Move_state{
 			MOVE_M1=0,
 			MOVE_M2,
 			MOVE_EXCHANGE
 		};
-	Move_state move_state;
+	Move_state move_state;*/
+	
+
 	if((cap1>0)&&(sz2==0)){
 		move_state=MOVE_M1;
 		}
@@ -341,32 +430,49 @@ void GlobalPlacer::random_neighbor(){
 	else{ //((cap1<=0)&&(cap2<=0)){
 		move_state=MOVE_EXCHANGE;
 	}
+	backup_bin_1=_bins_vec[idx1][idy1];
+	backup_bin_2=_bins_vec[idx2][idy2];
+	Module* m1=0;
+	Module* m2=0;
+
 	switch(move_state){
-		//		//cout<< "rstate2:" <<rstate<<endl;
 		case MOVE_M1:{
-			Module* m1=_bins_vec[idx1][idy1]->removeModule(_rnGen(sz1));
-			_bins_vec[idx2][idy2]->addModule(m1);
+			m1=_bins_vec[idx1][idy1]->removeModule(_rnGen(sz1));
+		//	_bins_vec[idx2][idy2]->addModule(m1);
+		//	backup_m_1=m1;
 
 		}break;
 		case MOVE_M2:{
-			Module* m2=_bins_vec[idx2][idy2]->removeModule(_rnGen(sz2));
-			_bins_vec[idx1][idy1]->addModule(m2);
+			m2=_bins_vec[idx2][idy2]->removeModule(_rnGen(sz2));
+		//	_bins_vec[idx1][idy1]->addModule(m2);
+		//	backup_m_2=m2;
 
 		}break;
 		case MOVE_EXCHANGE:{
-			Module* m1=_bins_vec[idx1][idy1]->removeModule(_rnGen(sz1));
-			Module* m2=_bins_vec[idx2][idy2]->removeModule(_rnGen(sz2));
-			_bins_vec[idx2][idy2]->addModule(m1);
-			_bins_vec[idx1][idy1]->addModule(m2);
-
+			m1=_bins_vec[idx1][idy1]->removeModule(_rnGen(sz1));
+			m2=_bins_vec[idx2][idy2]->removeModule(_rnGen(sz2));
+		//	_bins_vec[idx2][idy2]->addModule(m1);
+		//	_bins_vec[idx1][idy1]->addModule(m2);
+		//	backup_m_1=m1;
+		//	backup_m_2=m2;
 		}break;
 		default:{
 			assert(0);
 		}break;
 	}
+
+	backup_m_1=m1;
+	backup_m_2=m2;
+
+	double pre_cost=getNetCost(m1,m2);
+	_bins_vec[idx2][idy2]->addModule(m1);
+	_bins_vec[idx1][idy1]->addModule(m2);
+	double post_cost=getNetCost(m1,m2);
+	return post_cost-pre_cost;
 }
 void GlobalPlacer::store_backup(){
-	_backup_module.clear();
+	
+/*	_backup_module.clear();
 	for(unsigned j=0;j<_bin_numx;j++){
 		for(unsigned k=0;k<_bin_numy;k++){
 			for(unsigned i=0;i<_bins_vec[j][k]->size();i++ ){
@@ -375,10 +481,37 @@ void GlobalPlacer::store_backup(){
 				_backup_module.push_back(_bins_vec[j][k]->getModule(i));
 			}
 		}
-	}
+	}*/
 }
 void GlobalPlacer::restore_backup(){
+	switch(move_state){
+		//		//cout<< "rstate2:" <<rstate<<endl;
+		case MOVE_M1:{
+			backup_bin_2->removeModule(backup_m_1);
+			backup_bin_1->addModule(backup_m_1);
 
+		}break;
+		case MOVE_M2:{
+			backup_bin_1->removeModule(backup_m_2);
+			backup_bin_2->addModule(backup_m_2);
+
+		}break;
+		case MOVE_EXCHANGE:{
+			backup_bin_1->removeModule(backup_m_2);
+			backup_bin_2->removeModule(backup_m_1);
+			backup_bin_1->addModule(backup_m_1);
+			backup_bin_2->addModule(backup_m_2);
+		}break;
+		default:{
+			assert(0);
+		}break;
+	}
+	backup_bin_1=0;
+	backup_bin_2=0;
+	backup_m_1=0;
+	backup_m_2=0;
+
+/*
 	for(unsigned j=0;j<_bin_numx;j++){
 		for(unsigned k=0;k<_bin_numy;k++){
 			//	cout<<"j:"<<j<<" k:"<<k<<" i:"<<i<<endl;
@@ -408,6 +541,7 @@ void GlobalPlacer::restore_backup(){
 		}
 		if(i>=_backup_module.size()){break;}
 	}
+*/
 }
 void GlobalPlacer::confirm_backup(){
 
