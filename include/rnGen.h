@@ -19,7 +19,7 @@
 //#define SEED 1365691387 //e2
 //#ifdef RSEED
 #define SEED time(0)
-//#define SEED 1365601237
+//#define SEED 12 //seg fault
 //#endif
 //#define SEED 1365691203
 //#define SEED 1365631505 //quick success
@@ -32,7 +32,7 @@ class RandomNumGen
    public:
    //   RandomNumGen() { my_srandom(getpid()); }
       RandomNumGen() { 
-//		  cout<<"SEED:"<<SEED<<endl; 
+		  cout<<"SEED:"<<SEED<<endl; 
 		  my_srandom(SEED); 
 	  }
       RandomNumGen(unsigned seed) { my_srandom(seed); }

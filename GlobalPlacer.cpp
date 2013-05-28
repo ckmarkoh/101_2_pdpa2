@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <algorithm>
-
 #include <math.h>
 #include<iomanip>
 
@@ -70,9 +69,11 @@ void GlobalPlacer::place()
 //	unsigned ax=11;
 //	unsigned ay=6;
 //	cout<<ax/ay<<ax%ay<<endl;
+//printAllModules(0);
+	
 	initialize();
 	printf( "\nHPWL: %.0f\n",_placement.computeHpwl() );	
-
+//printAllBins(1);
 
 
 	simu_anneal();
@@ -99,8 +100,94 @@ void GlobalPlacer::initialize(){
 				unsigned((_placement.boundryTop()-_placement.boundryBottom())/max_y) );
 	cout<<"binx:"<<_bin_numx<<" biny:"<<_bin_numy <<endl;
 //	cout<<"***********0*************"<<endl;
+	randomInitialize();
+
+		_initial_cost=_placement.computeHpwl();
+}
+void GlobalPlacer::prePlaceInitialize(){
+	unsigned half_x=(unsigned)(_bin_numx)/2;
+	unsigned half_y=(unsigned)(_bin_numy)/2;
+	unsigned min_half=( int( min(half_x,half_y))  > 0 ) ? min(half_x,half_y) : 0;
+	
+	cout<<"half_x:"<<half_x<<endl;
+	cout<<"half_y:"<<half_y<<endl;
+	cout<<"min_half:"<<min_half<<endl;	
+
+
+	vector<Module*> vec_module;
+	vector<Net*> sorted_net;
+	for(unsigned i=0; i<_placement.numModules(); i++){
+		vec_module.push_back(& _placement.module(i));
+	}
+	for(unsigned i=0; i<_placement.numNets();i++){
+		sorted_net.push_back(& _placement.net(i));
+	}
+	for(int i=0;i<(int)sorted_net.size()-1;i++){
+		for(int j=(int)sorted_net.size()-1;j>=i+1;j--){
+			if(sorted_net[j]->numPins() > sorted_net[j-1]->numPins()){
+				swap(sorted_net[j],sorted_net[j-1]);
+			}
+		}
+	}
+
+	for(int i=0;i<(int)vec_module.size()-1;i++){
+		for(int j=(int)vec_module.size()-1;j>=i+1;j--){
+			if(vec_module[j]->numPins() > vec_module[j-1]->numPins()){
+				swap(vec_module[j],vec_module[j-1]);
+			}
+		}
+	}
+
+	unsigned ma=0;
+	//unsigned na=0;
+	//unsigned pa=0;
+
+
 	unsigned i=0;
-	while(i<_placement.numModules()){
+	while(i<min_half ){
+		unsigned xi=half_x-i;
+		unsigned yi=half_y-i;
+		unsigned j=0;
+		while(j<4){
+			unsigned k=0;
+			while(k < (2*i+1)){
+	//			cout<<xi<<" "<<yi<<endl;
+	//			cout<<"i"<<i<< " 2i+1"<< (2*i+1) <<endl;
+				if(_bins_vec[xi][yi]->capacity()>0){
+						if(ma<vec_module.size()){
+							_bins_vec[j][k]->addModule(vec_module[ma++]);
+						}
+						else{
+							break;
+						}
+				}
+				else{
+					if(j==0){
+						xi+=1;
+					}
+					else if(j==1){
+						yi+=1;
+					}
+					else if(j==2){
+						xi-=1;
+					}
+					else if(j==3){
+						yi-=1;
+					}
+					else{
+						assert(0);
+					}
+					k++;
+				}
+			}
+			j++;
+		}
+		i++;
+	}
+
+
+//	while(i<_placement.numModules()){
+	while(ma<vec_module.size()){
 		unsigned j=0;
 		while(j<_bin_numx){
 			unsigned k=0;
@@ -109,20 +196,59 @@ void GlobalPlacer::initialize(){
 				//	cout<<"j:"<<j<<" k:"<<k<<" i:"<<i<<endl;
 				//	cout<<_bins_vec[j][k]->size()<<endl;
 				//	cout<<_placement.module(i).name()<<endl;
-					_bins_vec[j][k]->addModule(&_placement.module(i++));
-					if(i>=_placement.numModules()){break;}
+//					_bins_vec[j][k]->addModule(&_placement.module(i++));
+//					if(i>=_placement.numModules()){break;}
+						if(ma<vec_module.size()){
+							_bins_vec[j][k]->addModule(vec_module[ma++]);
+						}
+						else{
+							break;
+						}
+
 				}
 				else{k++;}
 			}
-			if(i>=_placement.numModules()){break;}
+
+//			if(ma>=vec_module.size()){break;}
+			//if(i>=_placement.numModules()){break;}
 			j++;
 		}
-		if(i>=_placement.numModules()){break;}
+//		if(ma>=vec_module.size()){break;}
+		//if(i>=_placement.numModules()){break;}
 	}
 //	cout<<"***********1*************"<<endl;
-	_initial_cost=_placement.computeHpwl();
-}
 
+
+}
+void GlobalPlacer::randomInitialize(){
+	unsigned ma=0;
+	while(ma<_placement.numModules()){
+		unsigned j=0;
+		while(j<_bin_numx){
+			unsigned k=0;
+			while(k<_bin_numy){
+				if(_bins_vec[j][k]->capacity()>0){
+//					_bins_vec[j][k]->addModule(&_placement.module(ma++));
+//					if(i>=_placement.numModules()){break;}
+						if(ma<_placement.numModules()){
+							_bins_vec[j][k]->addModule(& _placement.module(ma++));
+						}
+						else{
+							break;
+						}
+
+				}
+				else{k++;}
+			}
+
+//			if(ma>=vec_module.size()){break;}
+			//if(i>=_placement.numModules()){break;}
+			j++;
+		}
+//		if(ma>=vec_module.size()){break;}
+		//if(i>=_placement.numModules()){break;}
+	}
+}
 void GlobalPlacer::printAllBins(int zi){
 	
 	cout<<"***********start_"<<zi<<"*************"<<endl;
@@ -135,6 +261,16 @@ void GlobalPlacer::printAllBins(int zi){
 			}
 		}
 	}
+	cout<<"***********end_"<<zi<<"*************"<<endl;
+}
+void GlobalPlacer::printAllModules(int zi){
+
+	cout<<"***********start_"<<zi<<"*************"<<endl;
+
+	for(unsigned i=0;i<_placement.numModules();i++){
+		cout<<_placement.module(i).name()<<endl;
+	}
+
 	cout<<"***********end_"<<zi<<"*************"<<endl;
 }
 
@@ -247,7 +383,7 @@ void GlobalPlacer::simu_anneal(){
 //	_myusage.reset();
 
 //	_treemgr.printCost();
-	while(i<21){
+	while(i<7){
 		simu_anneal_sub(r,t,frozen,n);
 		t*=0.1;
 		frozen*=0.1;
@@ -350,35 +486,35 @@ double GlobalPlacer::getCost(){
 		return total_cost;//_placement.computeHpwl()/100; 
 	}
 double GlobalPlacer::getNetCost(Module* m1, Module* m2){
-		vector<Net*> net_vec;
-		if(m1!=0){
-			for(unsigned i=0;i<m1->numPins();i++){
-				vector<Net*>::iterator it;
-				Net* n1=&( _placement.net(m1->pin(i).netId()) );
-				it = find (net_vec.begin(), net_vec.end(), n1 );
-				if(it==net_vec.end()){
-					net_vec.push_back(n1);
-				}
+	vector<Net*> net_vec;
+	if(m1!=0){
+		for(unsigned i=0;i<m1->numPins();i++){
+			vector<Net*>::iterator it;
+			Net* n1=&( _placement.net(m1->pin(i).netId()) );
+			it = find (net_vec.begin(), net_vec.end(), n1 );
+			if(it==net_vec.end()){
+				net_vec.push_back(n1);
 			}
 		}
-		if(m2!=0){
-			for(unsigned i=0;i<m2->numPins();i++){
-				vector<Net*>::iterator it;
-				Net* n2=&( _placement.net(m2->pin(i).netId()) );
-				it = find (net_vec.begin(), net_vec.end(), n2 );
-				if(it==net_vec.end()){
-					net_vec.push_back(n2);
-				}
-			}
-		}
-		double net_cost=0;
-	//	cout<<net_vec.size();
-		for(unsigned i=0;i<net_vec.size();i++){
-			
-			net_cost+=getNetEU(*net_vec[i]);
-		}
-		return net_cost/sqrt(_initial_cost);
 	}
+	if(m2!=0){
+		for(unsigned i=0;i<m2->numPins();i++){
+			vector<Net*>::iterator it;
+			Net* n2=&( _placement.net(m2->pin(i).netId()) );
+			it = find (net_vec.begin(), net_vec.end(), n2 );
+			if(it==net_vec.end()){
+				net_vec.push_back(n2);
+			}
+		}
+	}
+	double net_cost=0;
+//	cout<<net_vec.size();
+	for(unsigned i=0;i<net_vec.size();i++){
+		
+		net_cost+=getNetEU(*net_vec[i]);
+	}
+	return net_cost/sqrt(_initial_cost);
+}
 double GlobalPlacer::random_neighbor(){
 //	store_backup();
 	unsigned i_bin1=_rnGen(_bin_numx*_bin_numy);
@@ -395,6 +531,10 @@ double GlobalPlacer::random_neighbor(){
 	unsigned idy1=i_bin1%_bin_numy;
 	unsigned idx2=i_bin2/_bin_numy;
 	unsigned idy2=i_bin2%_bin_numy;
+	assert(idx1<_bin_numx);
+	assert(idx2<_bin_numx);
+	assert(idy1<_bin_numy);
+	assert(idy2<_bin_numy);
 	double cap1=_bins_vec[idx1][idy1]->capacity();
 	double cap2=_bins_vec[idx2][idy2]->capacity();
 	unsigned sz1=_bins_vec[idx1][idy1]->size();
@@ -405,8 +545,6 @@ double GlobalPlacer::random_neighbor(){
 			MOVE_EXCHANGE
 		};
 	Move_state move_state;*/
-	
-
 	if((cap1>0)&&(sz2==0)){
 		move_state=MOVE_M1;
 		}
@@ -434,6 +572,7 @@ double GlobalPlacer::random_neighbor(){
 	backup_bin_2=_bins_vec[idx2][idy2];
 	Module* m1=0;
 	Module* m2=0;
+	double pre_cost_cap= (-1)*(_bins_vec[idx1][idy1]->capacity())+(-1)*(_bins_vec[idx2][idy2]->capacity());
 
 	switch(move_state){
 		case MOVE_M1:{
@@ -464,11 +603,16 @@ double GlobalPlacer::random_neighbor(){
 	backup_m_1=m1;
 	backup_m_2=m2;
 
-	double pre_cost=getNetCost(m1,m2);
+	double pre_cost_net=getNetCost(m1,m2);
 	_bins_vec[idx2][idy2]->addModule(m1);
 	_bins_vec[idx1][idy1]->addModule(m2);
-	double post_cost=getNetCost(m1,m2);
-	return post_cost-pre_cost;
+	double post_cost_net=getNetCost(m1,m2);
+	double post_cost_cap= (-1)*(_bins_vec[idx1][idy1]->capacity())+(-1)*(_bins_vec[idx2][idy2]->capacity());
+	double net_cost=post_cost_net-pre_cost_net;
+	double cap_cost=(post_cost_cap-pre_cost_cap);
+//	cout<<"net_cost:"<<net_cost<<endl;
+//	cout<<"cap_cost:"<<cap_cost<<endl;
+	return net_cost;//+cap_cost;
 }
 void GlobalPlacer::store_backup(){
 	

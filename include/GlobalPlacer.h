@@ -84,8 +84,11 @@ public:
     GlobalPlacer(Placement &placement);
 	void place();
 	void initialize();
+	void prePlaceInitialize();
+	void randomInitialize();
 	void testBin();
 	void printAllBins(int zi=0);
+	void printAllModules(int zi=0);
 	double getNetWA(Net& n );
 	double getNetEU(Net& n );
 	double getNetHPWL(Net& n );
