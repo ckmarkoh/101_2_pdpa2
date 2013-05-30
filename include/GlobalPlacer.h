@@ -49,10 +49,10 @@ public:
 			_modules_vec.push_back(m);
 		}
 	}
-	double capacity(){
+	double capacity(double offset=1.0){
 		double cap=area();
 		for(unsigned i=0;i<_modules_vec.size();i++){
-			cap-=_modules_vec[i]->area();	
+			cap-=(_modules_vec[i]->area()*offset);	
 		}
 		return cap;
 	}

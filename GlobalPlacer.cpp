@@ -75,10 +75,11 @@ void GlobalPlacer::place()
 	printf( "\nHPWL: %.0f\n",_placement.computeHpwl() );	
 //printAllBins(1);
 
-
-	simu_anneal();
+printAllModules(0);
+//	simu_anneal();
 //	simu_anneal_sub(R,T,FROZEN,N);
-//	testBin();
+	testBin();
+//printAllBins(1);
 }
 
 void GlobalPlacer::initialize(){
@@ -100,8 +101,8 @@ void GlobalPlacer::initialize(){
 				unsigned((_placement.boundryTop()-_placement.boundryBottom())/max_y) );
 	cout<<"binx:"<<_bin_numx<<" biny:"<<_bin_numy <<endl;
 //	cout<<"***********0*************"<<endl;
+//	prePlaceInitialize();
 	randomInitialize();
-
 		_initial_cost=_placement.computeHpwl();
 }
 void GlobalPlacer::prePlaceInitialize(){
@@ -263,6 +264,7 @@ void GlobalPlacer::printAllBins(int zi){
 	}
 	cout<<"***********end_"<<zi<<"*************"<<endl;
 }
+
 void GlobalPlacer::printAllModules(int zi){
 
 	cout<<"***********start_"<<zi<<"*************"<<endl;
@@ -276,14 +278,18 @@ void GlobalPlacer::printAllModules(int zi){
 
 void GlobalPlacer::testBin(){
 
-    cout << format("HPWL: %.10f", getCost() ) << endl;
-//	printAllBins(0);
-	for(size_t i=1;i<50;i++){
-	random_neighbor();
-    cout << format("HPWL: %.10f", getCost() ) << endl;
-	restore_backup();
+  //  cout << format("HPWL: %.10f", getCost() ) << endl;
+	printAllBins(1);
+	for(size_t i=1;i<5;i++){
+		random_neighbor();
+	  //  cout << format("HPWL: %.10f", getCost() ) << endl;
+		restore_backup();
 	}
-    cout << format("HPWL: %.10f", getCost() ) << endl;
+
+	printAllBins(2);
+
+//    cout << format("HPWL: %.10f", getCost() ) << endl;
+	
 }
 
 
@@ -300,6 +306,7 @@ double GlobalPlacer::getNetEU(Net& n ){
 	}
 	return r*eu;
 }
+
 double GlobalPlacer::getNetHPWL(Net& n ){
 	Pin & p=n.pin(0);
 	double min_x=p.x();
@@ -383,14 +390,14 @@ void GlobalPlacer::simu_anneal(){
 //	_myusage.reset();
 
 //	_treemgr.printCost();
-	while(i<7){
+	while(i<5){
 		simu_anneal_sub(r,t,frozen,n);
 		t*=0.1;
 		frozen*=0.1;
 		n*=3;
 		float val =i++;
-		cout << format("HPWL: %.0f", _placement.computeHpwl() ) << endl;
-		cout<<"val: "<<val<<endl;
+//		cout << format("HPWL: %.0f", _placement.computeHpwl() ) << endl;
+//		cout<<"val: "<<val<<endl;
 		if(unsigned(i)%7==0){
 			r=R;
 			t=T;
@@ -468,10 +475,10 @@ bool GlobalPlacer::simu_anneal_sub(double r,double t,double frozen,double n){
 		}
 	}
 //	cout<<"stage_complete"<<endl;
-	cout<<"times:"<<times<<endl;
-	cout<<"fall_times:"<<fall_time<<endl;
-	cout<<"climb_times:"<<climb_time<<endl;
-	cout<<"restore_times:"<<restore_time<<endl;
+//	cout<<"times:"<<times<<endl;
+//	cout<<"fall_times:"<<fall_time<<endl;
+//	cout<<"climb_times:"<<climb_time<<endl;
+//	cout<<"restore_times:"<<restore_time<<endl;
 //	cout<<"========report=========="<<endl;
 //	_myusage.report(1,1);
 //	cout<<"**********************end sa:************************8"<<endl;
@@ -513,7 +520,7 @@ double GlobalPlacer::getNetCost(Module* m1, Module* m2){
 		
 		net_cost+=getNetEU(*net_vec[i]);
 	}
-	return net_cost/sqrt(_initial_cost);
+	return net_cost/_initial_cost;//sqrt(_initial_cost);
 }
 double GlobalPlacer::random_neighbor(){
 //	store_backup();
@@ -612,7 +619,7 @@ double GlobalPlacer::random_neighbor(){
 	double cap_cost=(post_cost_cap-pre_cost_cap);
 //	cout<<"net_cost:"<<net_cost<<endl;
 //	cout<<"cap_cost:"<<cap_cost<<endl;
-	return net_cost;//+cap_cost;
+	return net_cost+cap_cost;
 }
 void GlobalPlacer::store_backup(){
 	

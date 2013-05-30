@@ -18,12 +18,13 @@
 #define my_random   random
 //#define SEED 1365691387 //e2
 //#ifdef RSEED
-#define SEED time(0)
+//#define SEED time(0)
 //#define SEED 12 //seg fault
 //#endif
 //#define SEED 1365691203
 //#define SEED 1365631505 //quick success
 
+#define SEED 1369840810
 //#define SEED 1365439588 //bug2 rotate+rotate
 //#define SEED 1365438783 //bug1 rotate+exchange
 //#define SEED 1365439384 //good1 rotate+exchange
