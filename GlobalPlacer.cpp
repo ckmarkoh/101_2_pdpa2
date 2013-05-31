@@ -94,12 +94,12 @@ void GlobalPlacer::initialize(){
 		max_y=max(max_y,module_y);
 		max_x=max(max_x,module_x);
 	}
-	cout<<"max_x:"<<max_x<<endl;
-	cout<<"max_y:"<<max_y<<endl;
+//	cout<<"max_x:"<<max_x<<endl;
+//	cout<<"max_y:"<<max_y<<endl;
 	Bin::setWidthHeight(max_x,max_y);
 	reset_bin(unsigned( (_placement.boundryRight()-_placement.boundryLeft())/max_x) ,
 				unsigned((_placement.boundryTop()-_placement.boundryBottom())/max_y) );
-	cout<<"binx:"<<_bin_numx<<" biny:"<<_bin_numy <<endl;
+//	cout<<"binx:"<<_bin_numx<<" biny:"<<_bin_numy <<endl;
 //	cout<<"***********0*************"<<endl;
 //	prePlaceInitialize();
 	randomInitialize();
@@ -402,8 +402,8 @@ void GlobalPlacer::simu_anneal(){
 		n*=3;
 		i++;
 		float val =i;
-		cout << format("HPWL: %.0f", _placement.computeHpwl() ) << endl;
-		cout<<"val: "<<val<<endl;
+//		cout << format("HPWL: %.0f", _placement.computeHpwl() ) << endl;
+//		cout<<"val: "<<val<<endl;
 		if(unsigned(i)%5==0){
 			r=R;
 			t=T;
@@ -480,11 +480,11 @@ bool GlobalPlacer::simu_anneal_sub(double r,double t,double frozen,double n){
 			}
 		}
 	}
-	cout<<"stage_complete"<<endl;
-	cout<<"times:"<<times<<endl;
-	cout<<"fall_times:"<<fall_time<<endl;
-	cout<<"climb_times:"<<climb_time<<endl;
-	cout<<"restore_times:"<<restore_time<<endl;
+//	cout<<"stage_complete"<<endl;
+//	cout<<"times:"<<times<<endl;
+//	cout<<"fall_times:"<<fall_time<<endl;
+//	cout<<"climb_times:"<<climb_time<<endl;
+//	cout<<"restore_times:"<<restore_time<<endl;
 //	cout<<"========report=========="<<endl;
 //	_myusage.report(1,1);
 //	cout<<"**********************end sa:************************8"<<endl;
