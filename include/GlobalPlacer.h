@@ -11,11 +11,22 @@ class Bin
 {
 public:
 	Bin(){}
-	Bin(double x,double y):_x(x),_y(y){}
+	Bin(double x,double y,unsigned i, unsigned j):_x(x),_y(y),_i(i),_j(j){}
 	Module* getModule(unsigned i){
 		return _modules_vec[i];
 	}
+	void print_all(){
+		cout<<"start_bin:"<<_i<<","<<_j<<endl;
+		for(size_t i=0;i<_modules_vec.size();i++){
+			cout<<_modules_vec[i]->name()<<endl;
+		}
+
+		cout<<"end_bin:"<<_i<<","<<_j<<endl;
+	}
 	Module* removeModule(Module* m){
+	//	cout<<"before_remove0:"<<endl;
+	//	print_all();
+		Module* m2=0;
 		if(m==0){
 			return 0;
 		}
@@ -23,30 +34,47 @@ public:
 		vector<Module* >::iterator it =_modules_vec.begin();
 		while(it!=_modules_vec.end()){
 			if((*it)==m){
+	//			cout<<"remove1:"<<(*it)->name()<<endl;
+				m2=(*it);
 				_modules_vec.erase(it);
+				break;
+				//return (*it);
 			}
 			else{
 				it++;
 			}
 		}
-		return (*it);
+	//	cout<<"remove2:"<<(*it)->name()<<endl;
+	//	assert(it!=_modules_vec.end());
+	//	print_all();
+		return m2;
 	}
 	Module* removeModule(unsigned i){
+		//cout<<"before_remove0:"<<endl;
+		//print_all();
 		if(_modules_vec.size()==0){
 			return 0;
 		}
-		i = (i < _modules_vec.size()) ? i : _modules_vec.size();
+		i = (i <= _modules_vec.size()) ? i : _modules_vec.size();
 		vector<Module* >::iterator it =_modules_vec.begin();
+		//cout<<"i:"<<i<<endl;
 		for(unsigned j =0 ;j<i;j++){
+			//cout<<"r_count:"<<(*it)->name()<<endl;
 			it++;
+			//cout<<"j"<<j<<endl;
 		}
+		Module* m2=(*it);
+		//cout<<"remove00:"<<m2->name()<<endl;
 		_modules_vec.erase(it);
-		return (*it);
+		//cout<<"remove01:"<<m2->name()<<endl;
+		//print_all();
+		return m2;
 	}
 	void addModule(Module *m){
 		if(m!=0){
 			m->setCenterPosition(centerX(),centerY());	
 			_modules_vec.push_back(m);
+		//	cout<<"add:"<<m->name()<<endl;
 		}
 	}
 	double capacity(double offset=1.0){
@@ -75,7 +103,8 @@ private:
 	double _y;
 	static double _width;
 	static double _height;
-		
+	unsigned _i;
+	unsigned _j;
 };
 
 class GlobalPlacer 
@@ -101,7 +130,7 @@ public:
 		for(size_t i=0;i<numx;i++){
 			_bins_vec[i]=new Bin*[numy];
 			for(size_t j=0;j<numy;j++){
-				_bins_vec[i][j]=new Bin( _placement.boundryLeft()+i*Bin::width(), _placement.boundryBottom()+j*Bin::height());
+				_bins_vec[i][j]=new Bin( _placement.boundryLeft()+i*Bin::width(), _placement.boundryBottom()+j*Bin::height(),i,j);
 			}
 		}
 	}
